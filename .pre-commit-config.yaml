@@ -1,0 +1,23 @@
+# .pre-commit-config.yaml
+
+repos:
+  # Local hooks
+  - repo: local
+    hooks:
+      # OpenTofu format - requires OpenTofu to be installed
+      - id: format
+        name: Format OpenTofu .tf files
+        entry: scripts/pc_format_staged.sh
+        language: system
+
+      # Lint OpenTofu .tf files
+      - id: lint
+        name: Lint OpenTofu .tf files with TFLint
+        entry: scripts/pc_lint_staged.sh
+        language: system
+
+      # Generate OpenTofu module README.md
+      - id: docs
+        name: Generate OpenTofu module README.md
+        entry: scripts/pc_docs_staged.sh
+        language: system
