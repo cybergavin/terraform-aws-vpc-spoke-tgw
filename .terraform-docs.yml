@@ -1,10 +1,5 @@
 formatter: markdown table
 
-recursive:
-  enabled: true
-  path: .
-  include-main: false
-
 output:
   file: README.md
   mode: inject
