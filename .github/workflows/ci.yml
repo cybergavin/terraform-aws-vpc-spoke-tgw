@@ -191,7 +191,7 @@ jobs:
 
       - name: Tofu Destroy
         working-directory: examples/sales-spoke-vpc
-        run: tofu destroy --var-file="environments/${{ vars.ENVIRONMENT }}/terraform.tfvars"
+        run: tofu destroy --var-file="environments/${{ vars.ENVIRONMENT }}/terraform.tfvars" -auto-approve
       
   pre-release-tag:
     needs: [test]
