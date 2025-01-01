@@ -132,8 +132,8 @@ jobs:
           chmod +x bootstrap.sh
           ./bootstrap.sh ${{ vars.ENVIRONMENT }}
 
-  test:
-    needs: [bootstrap-test]
+  test-tofu-init:
+    needs: bootstrap-test
     runs-on: ubuntu-latest
     environment: sbx
     steps:
@@ -174,30 +174,140 @@ jobs:
         working-directory: examples/sales-spoke-vpc
         run: tofu init --var-file="environments/${{ vars.ENVIRONMENT }}/terraform.tfvars"
 
+  test-tofu-plan:
+    needs: test-tofu-init
+    runs-on: ubuntu-latest
+    environment: sbx
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+          mask-aws-account-id: true
+
+      - name: Cache OpenTofu .deb package
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/opentofu
+          key: opentofu-${{ env.OPENTOFU_VERSION }}
+          restore-keys: |
+            opentofu-${{ env.OPENTOFU_VERSION }}
+  
+      - name: Install OpenTofu
+        run: |
+          if [ ! -f ~/.cache/opentofu/tofu_${OPENTOFU_VERSION}_amd64.deb ]; then
+            echo "Downloading OpenTofu package..."
+            curl -LO https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_VERSION}/tofu_${OPENTOFU_VERSION}_amd64.deb
+            mkdir -p ~/.cache/opentofu
+            mv tofu_${OPENTOFU_VERSION}_amd64.deb ~/.cache/opentofu/
+          fi
+          sudo dpkg -i ~/.cache/opentofu/tofu_${OPENTOFU_VERSION}_amd64.deb
+          sudo apt-get install -f        
+
+      - name: Verify OpenTofu installation
+        run: tofu --version
+
       - name: Tofu Plan
         working-directory: examples/sales-spoke-vpc
-        run: tofu plan --var-file="environments/${{ vars.ENVIRONMENT }}/terraform.tfvars" --out=tfplan
+        run: tofu plan --var-file="environments/${{ vars.ENVIRONMENT }}/terraform.tfvars"
 
-      - name: Upload Tofu Plan
-        uses: actions/upload-artifact@v4
-        with:
-          name: tfplan
-          path: examples/sales-spoke-vpc/tfplan
-          retention-days: 1
+  
+  test-tofu-apply:
+    needs: test-tofu-plan
+    runs-on: ubuntu-latest
+    environment: sbx-approval
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
       
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+          mask-aws-account-id: true
+
+      - name: Cache OpenTofu .deb package
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/opentofu
+          key: opentofu-${{ env.OPENTOFU_VERSION }}
+          restore-keys: |
+            opentofu-${{ env.OPENTOFU_VERSION }}
+  
+      - name: Install OpenTofu
+        run: |
+          if [ ! -f ~/.cache/opentofu/tofu_${OPENTOFU_VERSION}_amd64.deb ]; then
+            echo "Downloading OpenTofu package..."
+            curl -LO https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_VERSION}/tofu_${OPENTOFU_VERSION}_amd64.deb
+            mkdir -p ~/.cache/opentofu
+            mv tofu_${OPENTOFU_VERSION}_amd64.deb ~/.cache/opentofu/
+          fi
+          sudo dpkg -i ~/.cache/opentofu/tofu_${OPENTOFU_VERSION}_amd64.deb
+          sudo apt-get install -f        
+
+      - name: Verify OpenTofu installation
+        run: tofu --version
+
       - name: Tofu Apply
         working-directory: examples/sales-spoke-vpc
-        run: tofu apply tfplan
+        run: tofu apply --var-file="environments/${{ vars.ENVIRONMENT }}/terraform.tfvars"
+
+  test-tofu-destroy:
+    needs: test-tofu-apply
+    runs-on: ubuntu-latest
+    environment: sbx-approval
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+          mask-aws-account-id: true
+
+      - name: Cache OpenTofu .deb package
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/opentofu
+          key: opentofu-${{ env.OPENTOFU_VERSION }}
+          restore-keys: |
+            opentofu-${{ env.OPENTOFU_VERSION }}
+  
+      - name: Install OpenTofu
+        run: |
+          if [ ! -f ~/.cache/opentofu/tofu_${OPENTOFU_VERSION}_amd64.deb ]; then
+            echo "Downloading OpenTofu package..."
+            curl -LO https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_VERSION}/tofu_${OPENTOFU_VERSION}_amd64.deb
+            mkdir -p ~/.cache/opentofu
+            mv tofu_${OPENTOFU_VERSION}_amd64.deb ~/.cache/opentofu/
+          fi
+          sudo dpkg -i ~/.cache/opentofu/tofu_${OPENTOFU_VERSION}_amd64.deb
+          sudo apt-get install -f        
+
+      - name: Verify OpenTofu installation
+        run: tofu --version
 
       - name: Tofu Destroy
         working-directory: examples/sales-spoke-vpc
         run: tofu destroy --var-file="environments/${{ vars.ENVIRONMENT }}/terraform.tfvars" -auto-approve
       
   pre-release-tag:
-    needs: [test]
+    needs: [test-tofu-destroy]
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    permissions:
+      contents: write
     if: github.ref != 'refs/heads/main'
 
     steps:
