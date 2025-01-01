@@ -1,0 +1,239 @@
+name: Formatting, Linting and Testing for OpenTofu Modules
+
+on:
+  push:
+    paths:
+      - 'terraform-aws-vpc-spoke-tgw/**/*'  # Include all files in the module
+      - '!terraform-aws-vpc-spoke-tgw/examples/**/*'  # Exclude the `examples` subdirectory
+    branches-ignore:
+      - main
+
+env:
+  OPENTOFU_VERSION: "1.8.8"
+
+jobs:
+  changed-files:
+    runs-on: ubuntu-latest
+    outputs:
+      files_to_process: ${{ steps.changes.outputs.changed_tf_files }}
+    steps:
+      - id: checkout_repo
+        name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: changes
+        name: Get list of changed .tf files
+        run: |
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- '*.tf')
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No .tf files have changed"
+            echo "changed_tf_files=" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed_tf_files=${CHANGED_FILES}" >> "$GITHUB_OUTPUT"
+          fi
+
+  tofu-fmt:
+    runs-on: ubuntu-latest
+    needs: changed-files
+    env:
+      CHANGED_TF_FILES: ${{ needs.changed-files.outputs.files_to_process }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache OpenTofu .deb package
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/opentofu
+          key: opentofu-${{ env.OPENTOFU_VERSION }}
+          restore-keys: |
+            opentofu-${{ env.OPENTOFU_VERSION }}
+  
+      - name: Install OpenTofu
+        run: |
+          if [ ! -f ~/.cache/opentofu/tofu_${OPENTOFU_VERSION}_amd64.deb ]; then
+            echo "Downloading OpenTofu package..."
+            curl -LO https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_VERSION}/tofu_${OPENTOFU_VERSION}_amd64.deb
+            mkdir -p ~/.cache/opentofu
+            mv tofu_${OPENTOFU_VERSION}_amd64.deb ~/.cache/opentofu/
+          fi
+          sudo dpkg -i ~/.cache/opentofu/tofu_${OPENTOFU_VERSION}_amd64.deb
+          sudo apt-get install -f        
+
+      - name: Verify OpenTofu installation
+        run: tofu --version
+
+      - name: Format changed OpenTofu .tf files
+        run: |
+          if [ -n "$CHANGED_TF_FILES" ]; then
+            echo "Formatting changed files: $CHANGED_TF_FILES"
+            tofu fmt -check $CHANGED_TF_FILES
+            if [ $? -ne 0 ]; then
+              echo "Formatting error found"
+              exit 1
+            fi
+          else
+            echo "No Terraform/OpenTofu files changed in the modules directory."
+          fi
+
+  tflint:
+    runs-on: ubuntu-latest
+    needs: changed-files
+    env:
+      CHANGED_TF_FILES: ${{ needs.changed-files.outputs.files_to_process }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache plugin dir
+        uses: actions/cache@v4
+        with:
+          path: ~/.tflint.d/plugins
+          key: tflint-${{ hashFiles('.tflint.hcl') }}
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.54.0
+
+      - name: Show version
+        run: tflint --version
+
+      - name: Run TFLint on changed Terraform/OpenTofu files in modules
+        run: |
+          if [ -n "$CHANGED_TF_FILES" ]; then
+            for dir in $(echo "$CHANGED_TF_FILES" | xargs -n1 dirname | sort -u); do
+              echo "Linting Terraform files in $dir"
+              tflint --chdir=$dir --recursive
+            done
+          else
+            echo "No Terraform/OpenTofu files changed in the modules directory."
+          fi
+  
+  bootstrap-test:
+    needs: [tofu-fmt, tflint]
+    runs-on: ubuntu-latest
+    environment: sbx
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+          mask-aws-account-id: true
+
+      - name: Run Bootstrap Script
+        working-directory: examples/sales-spoke-vpc/bootstrap
+        run: |
+          chmod +x bootstrap.sh
+          ./bootstrap.sh ${{ vars.ENVIRONMENT }}
+
+  test:
+    needs: [bootstrap-test]
+    runs-on: ubuntu-latest
+    environment: sbx
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+          mask-aws-account-id: true
+
+      - name: Cache OpenTofu .deb package
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/opentofu
+          key: opentofu-${{ env.OPENTOFU_VERSION }}
+          restore-keys: |
+            opentofu-${{ env.OPENTOFU_VERSION }}
+  
+      - name: Install OpenTofu
+        run: |
+          if [ ! -f ~/.cache/opentofu/tofu_${OPENTOFU_VERSION}_amd64.deb ]; then
+            echo "Downloading OpenTofu package..."
+            curl -LO https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_VERSION}/tofu_${OPENTOFU_VERSION}_amd64.deb
+            mkdir -p ~/.cache/opentofu
+            mv tofu_${OPENTOFU_VERSION}_amd64.deb ~/.cache/opentofu/
+          fi
+          sudo dpkg -i ~/.cache/opentofu/tofu_${OPENTOFU_VERSION}_amd64.deb
+          sudo apt-get install -f        
+
+      - name: Verify OpenTofu installation
+        run: tofu --version
+
+      - name: Tofu Init
+        working-directory: examples/sales-spoke-vpc
+        run: tofu init --var-file="environments/${{ vars.ENVIRONMENT }}/terraform.tfvars"
+
+      - name: Tofu Plan
+        working-directory: examples/sales-spoke-vpc
+        run: tofu plan --var-file="environments/${{ vars.ENVIRONMENT }}/terraform.tfvars" --out=tfplan
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: examples/sales-spoke-vpc/tfplan
+          retention-days: 1
+      
+      - name: Terraform Apply
+        working-directory: examples/sales-spoke-vpc
+        run: tofu apply tfplan
+      
+  pre-release-tag:
+    needs: [test]
+    runs-on: ubuntu-latest
+    if: github.ref != 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fetch all tags
+        run: |
+          git fetch --tags  # Ensure that all tags are fetched
+
+      - name: Set Git user for tagging
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Get latest stable tag
+        id: version
+        run: |
+          # Fetch the latest stable version tag
+          latest_stable_tag=$(git tag -l "v*" | grep -v "beta" | sort -V | tail -n 1)
+          if [ -z "$latest_stable_tag" ]; then
+            latest_stable_tag="v0.0.0"
+          fi
+          echo "Latest stable tag: $latest_stable_tag"
+                    
+          # Extract major, minor, patch from last tag
+          version_base=$(echo $latest_stable_tag | sed -E 's/v([0-9]+)\.([0-9]+)\.([0-9]+)/\1.\2.\3/')
+          echo "Base version: $version_base"
+          
+          # Count the number of betas by finding all existing tags that start with the version base
+          beta_count=$(git tag -l "v${version_base}-beta*" | wc -l)
+          next_beta=$((beta_count + 1))
+          
+          # Construct the new beta version
+          new_version="v${version_base}-beta.${next_beta}"
+          echo "New version: $new_version"
+          echo "new_version=$new_version" >> $GITHUB_ENV
+
+      - name: Create pre-release tag
+        run: |
+          git tag -a $new_version -m "Pre-release version $new_version"
+          git push origin $new_version
