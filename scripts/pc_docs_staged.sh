@@ -7,7 +7,7 @@ if ! command -v terraform-docs &> /dev/null; then
 fi
 
 # Generate docs only if .tf files in current directory are staged and README.md exists with markers
-if git diff --name-only --cached -- "*.tf" &> /dev/null && \
+if git diff --name-only --cached -- "./*.tf" &> /dev/null && \
    [ -f "README.md" ] && \
    grep -q "<!-- BEGIN_TF_DOCS -->" "README.md"; then
     terraform-docs .

@@ -1,7 +1,7 @@
 variable "org" {
   description = "A name or abbreviation for the Organization. Only alphanumeric characters and hyphens are valid, with a string length from 3 to 8 characters."
   type        = string
-  default     = "usc-its"
+  default     = "acme-it"
 
   validation {
     condition     = can(regex("^[a-zA-Z][a-zA-Z0-9]*(?:-[a-zA-Z0-9]+)*$", var.org)) && length(var.org) >= 3 && length(var.org) <= 8
@@ -27,14 +27,9 @@ variable "global_tags" {
 }
 
 variable "environment" {
-  description = "A valid Infrastructure Environment (poc, dev, tst, stg, prd)"
+  description = "A valid Infrastructure Environment"
   type        = string
   default     = "poc"
-
-  validation {
-    condition     = contains(["poc", "dev", "tst", "stg", "prd"], var.environment)
-    error_message = "The variable 'environment' must be one of: poc, dev, tst, stg, prd."
-  }
 }
 
 variable "vpc_cidr" {
