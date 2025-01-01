@@ -2,6 +2,8 @@
 
 This OpenTofu module provisions foundational networking infrastructure in **spoke VPCs** that host business applications or workloads. It helps to quickly set up basic networking required by workloads in a multi-account hub-spoke network topology on AWS, where all ingress and egress traffic to/from the workload VPC passes through a *hub* VPC (in another AWS account) via a Transit Gateway (TGW).
 
+![](VIEWME.png "AWS Hub-Spoke")
+
 ## Features
 - Provisions the following network infrastructure in a spoke AWS account:
   - A VPC with subnets
