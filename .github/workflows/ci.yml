@@ -114,6 +114,9 @@ jobs:
     needs: [tofu-fmt, tflint]
     runs-on: ubuntu-latest
     environment: sbx
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -320,3 +323,26 @@ jobs:
         run: |
           git tag -a $new_version -m "Pre-release version $new_version"
           git push origin $new_version
+
+  create-pull-request:
+    runs-on: ubuntu-latest
+    needs: pre-release-tag
+    environment: sbx-approval
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract branch name
+        id: extract_branch
+        run: echo "branch_name=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+
+      - name: Create Pull Request
+        run: |
+          echo "Creating a pull request for branch: $branch_name"
+          gh pr create \
+            --base main \
+            --head $branch_name \
+            --title "Auto PR (Modify title with feature|bugfix|release|etc): $branch_name" \
+            --body "This PR was auto-generated for branch $branch_name."         
