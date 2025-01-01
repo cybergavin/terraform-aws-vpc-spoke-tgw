@@ -212,6 +212,10 @@ jobs:
       - name: Verify OpenTofu installation
         run: tofu --version
 
+      - name: Tofu Init
+        working-directory: examples/sales-spoke-vpc
+        run: tofu init --var-file="environments/${{ vars.ENVIRONMENT }}/terraform.tfvars"
+
       - name: Tofu Plan
         working-directory: examples/sales-spoke-vpc
         run: tofu plan --var-file="environments/${{ vars.ENVIRONMENT }}/terraform.tfvars"
@@ -255,9 +259,13 @@ jobs:
       - name: Verify OpenTofu installation
         run: tofu --version
 
+      - name: Tofu Init
+        working-directory: examples/sales-spoke-vpc
+        run: tofu init --var-file="environments/${{ vars.ENVIRONMENT }}/terraform.tfvars"
+
       - name: Tofu Apply
         working-directory: examples/sales-spoke-vpc
-        run: tofu apply --var-file="environments/${{ vars.ENVIRONMENT }}/terraform.tfvars"
+        run: tofu apply --var-file="environments/${{ vars.ENVIRONMENT }}/terraform.tfvars" -auto-approve
 
   test-tofu-destroy:
     needs: test-tofu-apply
@@ -296,6 +304,10 @@ jobs:
 
       - name: Verify OpenTofu installation
         run: tofu --version
+
+      - name: Tofu Init
+        working-directory: examples/sales-spoke-vpc
+        run: tofu init --var-file="environments/${{ vars.ENVIRONMENT }}/terraform.tfvars"
 
       - name: Tofu Destroy
         working-directory: examples/sales-spoke-vpc
