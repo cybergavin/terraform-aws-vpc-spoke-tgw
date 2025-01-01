@@ -1,13 +1,3 @@
-variable "aws_profile" {
-  description = "AWS CLI profile name"
-  type        = string
-}
-
-variable "aws_region" {
-  description = "AWS region to deploy resources"
-  type        = string
-}
-
 variable "org" {
   description = "A name or abbreviation for the Organization. Must not contain blankspaces and special characters."
   type        = string
