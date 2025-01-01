@@ -2,9 +2,6 @@ name: Formatting, Linting and Testing for OpenTofu Modules
 
 on:
   push:
-    paths:
-      - 'terraform-aws-vpc-spoke-tgw/**/*'  # Include all files in the module
-      - '!terraform-aws-vpc-spoke-tgw/examples/**/*'  # Exclude the `examples` subdirectory
     branches-ignore:
       - main
 
