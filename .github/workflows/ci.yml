@@ -178,20 +178,26 @@ jobs:
         working-directory: examples/sales-spoke-vpc
         run: tofu plan --var-file="environments/${{ vars.ENVIRONMENT }}/terraform.tfvars" --out=tfplan
 
-      - name: Upload Terraform Plan
+      - name: Upload Tofu Plan
         uses: actions/upload-artifact@v4
         with:
           name: tfplan
           path: examples/sales-spoke-vpc/tfplan
           retention-days: 1
       
-      - name: Terraform Apply
+      - name: Tofu Apply
         working-directory: examples/sales-spoke-vpc
         run: tofu apply tfplan
+
+      - name: Tofu Destroy
+        working-directory: examples/sales-spoke-vpc
+        run: tofu destroy --var-file="environments/${{ vars.ENVIRONMENT }}/terraform.tfvars"
       
   pre-release-tag:
     needs: [test]
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     if: github.ref != 'refs/heads/main'
 
     steps:
