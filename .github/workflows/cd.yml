@@ -12,7 +12,8 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Used by GitHub CLI for API authentication
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Used by GitHub Actions for repository and tag operations
-
+    permissions:
+      contents: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
