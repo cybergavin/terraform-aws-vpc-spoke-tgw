@@ -33,8 +33,15 @@ jobs:
           # Fetch the commit message of the latest commit (merge commit)
           commit_message=$(git log -1 --pretty=%B)
           echo "Commit Message: $commit_message"
+          
           # Extract the PR title (assumes your commit message follows a standard format like "feat: ...")
-          echo "pr_title=\"$(echo $commit_message|head -n 1)\"" >> $GITHUB_ENV
+          pr_title=$(echo "$commit_message" | head -n 1 | sed 's/^"\(.*\)"$/\1/')
+
+          # Debugging: Log the PR title without quotes
+          echo "PR Title: '$pr_title'"
+
+          # Store the cleaned PR title in the GitHub environment variable
+          echo "pr_title=$pr_title" >> $GITHUB_ENV
 
       - name: Determine version from PR title
         id: version
