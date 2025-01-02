@@ -84,7 +84,7 @@ jobs:
           git push origin ${{ env.version_tag }}
 
       - name: Create a release
-        uses: actions/create-release@v4
+        uses: actions/create-release@v1
         with:
           tag_name: ${{ env.version_tag }}
           release_name: ${{ env.version_tag }}
