@@ -22,6 +22,7 @@ jobs:
           fetch-depth: 0
 
       - name: Get list of changed TF and YAML files
+        id: changes
         run: |
           # Check if the current branch has no commits (i.e., it's the first commit)
           if [ $(git rev-list --count HEAD) -eq 1 ]; then
@@ -37,6 +38,8 @@ jobs:
               echo "run_job=false" >> "$GITHUB_OUTPUT"
             fi
           fi
+          echo "run_job is $run_job"
+          echo "changed_tf_files is $changed_tf_files"
 
   tofu-fmt:
     runs-on: ubuntu-latest
