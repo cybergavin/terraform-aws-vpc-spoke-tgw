@@ -17,6 +17,7 @@ runs:
           opentofu-${{ inputs.version }}
 
     - name: Check if OpenTofu is cached
+      shell: bash
       run: |
         if [ ! -f ~/.cache/opentofu/tofu_${{ inputs.version }}_amd64.deb ]; then
           echo "Downloading OpenTofu package..."
@@ -26,9 +27,11 @@ runs:
         fi
 
     - name: Install OpenTofu
+      shell: bash
       run: |
         sudo dpkg -i ~/.cache/opentofu/tofu_${{ inputs.version }}_amd64.deb
         sudo apt-get install -f
 
     - name: Verify OpenTofu installation
+      shell: bash
       run: tofu --version
