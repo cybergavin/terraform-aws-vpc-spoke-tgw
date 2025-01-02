@@ -114,9 +114,6 @@ jobs:
     needs: [tofu-fmt, tflint]
     runs-on: ubuntu-latest
     environment: sbx
-    permissions:
-      id-token: write
-      contents: read
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -327,7 +324,9 @@ jobs:
   create-pull-request:
     runs-on: ubuntu-latest
     needs: pre-release-tag
-    environment: sbx-approval
+    environment: sbx
+    permissions:
+      contents: write
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
     steps:
