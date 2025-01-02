@@ -34,7 +34,7 @@ jobs:
           commit_message=$(git log -1 --pretty=%B)
           echo "Commit Message: $commit_message"
           # Extract the PR title (assumes your commit message follows a standard format like "feat: ...")
-          echo "pr_title=$(echo \"$commit_message\" | head -n 1)" >> $GITHUB_ENV
+          echo "pr_title=\"$(echo $commit_message|head -n 1)\"" >> $GITHUB_ENV
 
       - name: Determine version from PR title
         id: version
@@ -50,13 +50,13 @@ jobs:
           IFS='.' read -r major minor patch <<< "$(echo "$latest_stable_tag" | sed -E 's/^v([0-9]+)\.([0-9]+)\.([0-9]+)/\1.\2.\3/')"
           
           # Determine the version increment based on the PR title
-          if [[ "${{ env.pr_title }}" =~ ^[a-zA-Z]+!: ]]; then
+          if [[ "$pr_title" =~ ^[a-zA-Z]+!: ]]; then
             # Breaking change -> Increment major version
             version_tag="v$((major + 1)).0.0"
-          elif [[ "${{ env.pr_title }}" =~ ^feat: ]]; then
+          elif [[ "$pr_title" =~ ^feat: ]]; then
             # Feature -> Increment minor version
             version_tag="v${major}.$((minor + 1)).0"
-          elif [[ "${{ env.pr_title }}" =~ ^fix: ]]; then
+          elif [[ "$pr_title" =~ ^fix: ]]; then
             # Bug fix -> Increment patch version
             version_tag="v${major}.${minor}.$((patch + 1))"
           else
@@ -69,8 +69,8 @@ jobs:
 
       - name: Create and push stable release tag
         run: |
-          git tag -a ${{ env.version_tag }} -m "Release version ${{ env.version_tag }}"
-          git push origin ${{ env.version_tag }}
+          git tag -a $version_tag -m "Release version $version_tag"
+          git push origin $version_tag
 
       - name: Create a release
         uses: actions/create-release@v1
