@@ -24,13 +24,19 @@ jobs:
       - id: changes
         name: Get list of changed TF and YAML files
         run: |
-          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- '*.tf' '*.yml')
-          CHANGED_TF_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- '*.tf')
-          if [ -n "$CHANGED_FILES" ]; then
+          # Check if the current branch has no commits (i.e., it's the first commit)
+          if [ $(git rev-list --count HEAD) -eq 1 ]; then
+            echo "This is the first commit on the branch. Running job."
             echo "run_job=true" >> "$GITHUB_OUTPUT"
-            echo "changed_tf_files=${CHANGED_TF_FILES}" >> "$GITHUB_OUTPUT"
           else
-            echo "run_job=false" >> "$GITHUB_OUTPUT"
+            CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- '*.tf' '*.yml')
+            CHANGED_TF_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- '*.tf')
+            if [ -n "$CHANGED_FILES" ]; then
+              echo "run_job=true" >> "$GITHUB_OUTPUT"
+              echo "changed_tf_files=${CHANGED_TF_FILES}" >> "$GITHUB_OUTPUT"
+            else
+              echo "run_job=false" >> "$GITHUB_OUTPUT"
+            fi
           fi
 
   tofu-fmt:
