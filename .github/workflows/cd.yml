@@ -50,13 +50,13 @@ jobs:
           IFS='.' read -r major minor patch <<< "$(echo "$latest_stable_tag" | sed -E 's/^v([0-9]+)\.([0-9]+)\.([0-9]+)/\1.\2.\3/')"
           
           # Determine the version increment based on the PR title
-          if [[ "$pr_title" =~ ^[a-zA-Z]+!: ]]; then
+          if [[ "${{ env.pr_title }}" =~ ^[a-zA-Z]+!: ]]; then
             # Breaking change -> Increment major version
             version_tag="v$((major + 1)).0.0"
-          elif [[ "$pr_title" =~ ^feat: ]]; then
+          elif [[ "${{ env.pr_title }}" =~ ^feat: ]]; then
             # Feature -> Increment minor version
             version_tag="v${major}.$((minor + 1)).0"
-          elif [[ "$pr_title" =~ ^fix: ]]; then
+          elif [[ "${{ env.pr_title }}" =~ ^fix: ]]; then
             # Bug fix -> Increment patch version
             version_tag="v${major}.${minor}.$((patch + 1))"
           else
@@ -69,13 +69,13 @@ jobs:
 
       - name: Create and push stable release tag
         run: |
-          git tag -a $version_tag -m "Release version $version_tag"
-          git push origin $version_tag
+          git tag -a ${{ env.version_tag }} -m "Release version ${{ env.version_tag }}"
+          git push origin ${{ env.version_tag }}
 
       - name: Create a release
         uses: actions/create-release@v1
         with:
-          tag_name: $version_tag
-          release_name: $version_tag
+          tag_name: ${{ env.version_tag }}
+          release_name: ${{ env.version_tag }}
           draft: false
           prerelease: false
