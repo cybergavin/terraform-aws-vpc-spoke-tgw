@@ -21,14 +21,23 @@ jobs:
         run: |
           git fetch --prune --unshallow --tags
 
+      - name: Set Git user for tagging
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
       - name: Get the PR number of the merged commit
         id: get_pr_number
         run: |
+          # Get the merge commit hash
+          merge_commit_hash=$(git log -1 --pretty=format:"%H")
+          echo "Merge Commit Hash: $merge_commit_hash"
+
           # Find the PR number associated with the current merge commit
-          PR_NUMBER=$(gh pr list --search "is:merged base:main head:${{ github.sha }}" --json number --jq '.[0].number')
+          PR_NUMBER=$(gh pr list --search "is:merged base:main $merge_commit_hash" --json number --jq '.[0].number')
           
           if [ -z "$PR_NUMBER" ]; then
-            echo "No PR found for commit ${{ github.sha }}. Likely a direct commit to main."
+            echo "No PR found for commit $merge_commit_hash. Likely a direct commit to main."
             echo "pr_number=direct_commit" >> $GITHUB_ENV
           else
             echo "PR Number: $PR_NUMBER"
@@ -42,7 +51,7 @@ jobs:
             echo "Direct commit detected. Skipping PR title fetch."
             echo "pr_title=Direct commit to main" >> $GITHUB_ENV
           else
-            PR_TITLE=$(gh pr view ${{ env.pr_number }} --json title -q ".title")
+            PR_TITLE=$(gh pr view $pr_number --json title -q ".title")
             echo "PR Title: $PR_TITLE"
             echo "pr_title=$PR_TITLE" >> $GITHUB_ENV
           fi
@@ -80,13 +89,13 @@ jobs:
 
       - name: Create and push stable release tag
         run: |
-          git tag -a ${{ env.version_tag }} -m "Release version ${{ env.version_tag }}"
-          git push origin ${{ env.version_tag }}
+          git tag -a $version_tag -m "Release version $version_tag"
+          git push origin $version_tag
 
       - name: Create a release
         uses: actions/create-release@v1
         with:
-          tag_name: ${{ env.version_tag }}
-          release_name: ${{ env.version_tag }}
+          tag_name: $version_tag
+          release_name: $version_tag
           draft: false
           prerelease: false
