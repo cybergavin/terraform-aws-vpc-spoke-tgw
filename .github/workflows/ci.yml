@@ -21,8 +21,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - id: changes
-        name: Get list of changed TF and YAML files
+      - name: Get list of changed TF and YAML files
         run: |
           # Check if the current branch has no commits (i.e., it's the first commit)
           if [ $(git rev-list --count HEAD) -eq 1 ]; then
