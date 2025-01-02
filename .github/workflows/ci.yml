@@ -35,6 +35,8 @@ jobs:
           fi
           if [ -n "$CHANGED_FILES" ]; then
             echo "run_job=true" >> "$GITHUB_OUTPUT"
+            # Convert newline-separated list to a single line with spaces
+            CHANGED_TF_FILES=$(echo "$CHANGED_TF_FILES" | tr '\n' ' ')
             echo "changed_tf_files=${CHANGED_TF_FILES}" >> "$GITHUB_OUTPUT"
           else
             echo "run_job=false" >> "$GITHUB_OUTPUT"
