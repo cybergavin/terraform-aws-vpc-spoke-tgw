@@ -32,12 +32,11 @@ jobs:
 
       - name: Get PR title using GitHub CLI
         id: get_pr_title
+        env:
+            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Set GH_TOKEN in the environment
         run: |
-          # Set the GH_TOKEN for authentication
-          export GH_TOKEN=${{ secrets.GITHUB_TOKEN }}
-
           # Get the PR number
-          pr_number=$(gh pr list --search "is:merged base:main head:${{ github.event.before }}" --json number --jq '.[0].number')
+          pr_number=$(gh pr view --json number --jq '.number' $commit_hash)
           echo "PR Number: $pr_number"
 
           # Fetch the PR title using the GitHub CLI

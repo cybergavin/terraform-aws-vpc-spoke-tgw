@@ -15,31 +15,32 @@ jobs:
       run_job: ${{ steps.changes.outputs.run_job }}
       changed_tf_files: ${{ steps.changes.outputs.changed_tf_files }}
     steps:
-      - id: checkout_repo
-        name: Checkout repository
+      - name: Checkout repository
+        id: checkout_repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Get list of changed TF and YAML files
+      - name: Determine if first push
         id: changes
         run: |
-          # Check if the current branch has no commits (i.e., it's the first commit)
-          if [ $(git rev-list --count HEAD) -eq 1 ]; then
-            echo "This is the first commit on the branch. Running job."
-            echo "run_job=true" >> "$GITHUB_OUTPUT"
+          # Check if there are any commits before the current one
+          if [ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]; then
+            echo "This is the first push to the branch."
+            CHANGED_FILES=$(find . -type f \( -name '*.tf' -o -name '*.yml' \))
+            CHANGED_TF_FILES=$(find . -type f -name '*.tf')
           else
             CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- '*.tf' '*.yml')
             CHANGED_TF_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- '*.tf')
-            if [ -n "$CHANGED_FILES" ]; then
-              echo "run_job=true" >> "$GITHUB_OUTPUT"
-              echo "changed_tf_files=${CHANGED_TF_FILES}" >> "$GITHUB_OUTPUT"
-            else
-              echo "run_job=false" >> "$GITHUB_OUTPUT"
-            fi
           fi
-          echo "run_job is $run_job"
-          echo "changed_tf_files is $changed_tf_files"
+          if [ -n "$CHANGED_FILES" ]; then
+            echo "run_job=true" >> "$GITHUB_OUTPUT"
+            # Convert newline-separated list to a single line with spaces
+            CHANGED_TF_FILES=$(echo "$CHANGED_TF_FILES" | tr '\n' ' ')
+            echo "changed_tf_files=${CHANGED_TF_FILES}" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_job=false" >> "$GITHUB_OUTPUT"
+          fi
 
   tofu-fmt:
     runs-on: ubuntu-latest
@@ -281,7 +282,7 @@ jobs:
       contents: write
       pull-requests: write
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
