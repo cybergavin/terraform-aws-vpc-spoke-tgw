@@ -288,6 +288,7 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
     permissions:
       pull-requests: read
+    if: always() && needs.pre-release-tag.result == 'success'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -314,7 +315,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    if: needs.check-existing-pr.outputs.pr_exists == 'false'
+    if: always() &&needs.check-existing-pr.outputs.pr_exists == 'false'
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
     steps:
