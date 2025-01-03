@@ -23,6 +23,20 @@ This OpenTofu module provisions foundational networking infrastructure in **spok
 - The TGW set up in the `network services` AWS account must be shared with the `workload` AWS account via Resource Access Manager (RAM) and the `TGW share ARN` must be made available. Ideally, if the TGW share is automated via OpenTofu, then the ARN may be accessed from OpenTofu state.
 - The `TGW ID` must be made available. Ideally, if the TGW provisioning is automated via OpenTofu, then the TGW ID may be accessed from OpenTofu state.
 
+## Example Usage
+
+Refer to the [sales-spoke-vpc](https://github.com/cybergavin/terraform-aws-vpc-spoke-tgw/tree/main/examples/sales-spoke-vpc) example for a complete example of how to use this module.
+
+**NOTE:** The `sales-spoke-vpc` example links the module via relative paths, but you can also link the module via the module registry as shown below.
+
+```hcl
+module "sales-spoke-vpc" {
+  source  = "cybergavin/vpc-spoke-tgw/aws"
+  version = "1.0.2"
+  # insert the required variables here
+}
+```
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
