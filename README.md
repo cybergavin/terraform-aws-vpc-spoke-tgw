@@ -1,3 +1,6 @@
+![](https://github.com/cybergavin/terraform-aws-vpc-spoke-tgw/actions/workflows/ci.yml/badge.svg)
+![](https://github.com/cybergavin/terraform-aws-vpc-spoke-tgw/actions/workflows/cd.yml/badge.svg)
+
 # OpenTofu Module: `vpc-spoke-tgw`
 
 This OpenTofu module provisions foundational networking infrastructure in **spoke VPCs** that host business applications or workloads. It helps to quickly set up basic networking required by workloads in a multi-account hub-spoke network topology on AWS, where all ingress and egress traffic to/from the workload VPC passes through a *hub* VPC (in another AWS account) via a Transit Gateway (TGW).
