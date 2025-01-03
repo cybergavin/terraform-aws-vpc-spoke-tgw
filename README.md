@@ -14,10 +14,6 @@ This OpenTofu module provisions foundational networking infrastructure in **spok
 - Leverages the cloudposse terraform-null-label module to assign standardized names to provisioned resources.
 - Applies tags consistently to provisioned resources.
 
-## Build Status
-
-![CI Pipeline](https://github.com/cybergavin/terraform-aws-vpc-spoke-tgw/actions/workflows/ci.yml/badge.svg)
-![CD Pipeline](https://github.com/cybergavin/terraform-aws-vpc-spoke-tgw/actions/workflows/cd.yml/badge.svg)
 
 ## Prerequisites
 
