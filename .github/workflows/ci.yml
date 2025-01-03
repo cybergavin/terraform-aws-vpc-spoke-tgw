@@ -304,6 +304,7 @@ jobs:
             echo "pr_exists=true" >> $GITHUB_ENV
           else
             echo "pr_exists=false" >> $GITHUB_ENV
+          fi
     outputs:
         pr_exists: ${{ env.pr_exists }}
 
@@ -331,4 +332,4 @@ jobs:
             --base main \
             --head $branch_name \
             --title "Auto PR (Modify title with feature|bugfix|release|etc): $branch_name" \
-            --body "This PR was auto-generated for branch $branch_name."         
+            --body "This PR was auto-generated for branch $branch_name."
