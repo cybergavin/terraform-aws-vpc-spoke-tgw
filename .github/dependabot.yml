@@ -25,18 +25,3 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
-
-  # AWS Actions
-  - package-ecosystem: "github-actions"
-    directory: "/"                 # Root directory of the repository
-    schedule:
-      interval: "weekly"           # Run updates weekly
-    allow:
-      - dependency-name: "aws-actions/*"  # Only target AWS Actions
-    labels:
-      - "aws-actions"
-      - "github-actions"
-      - "dependencies"
-    commit-message:
-      prefix: "chore"
-      include: "scope"
