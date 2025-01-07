@@ -44,7 +44,7 @@ if [ -f "$TFVARS_FILE" ]; then
   echo "app_id: $APP_ID"
   echo "environment: $ENVIRONMENT"
 
-  # Call the CloudFormation or AWS CLI command
+  # Deploy the backend cloudformation stack
   aws cloudformation deploy \
     --template-file bootstrap-backend.yml \
     --stack-name "${ORG}-cf-${APP_ID}-${ENVIRONMENT}-tfstate" \
