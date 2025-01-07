@@ -1,0 +1,22 @@
+directory:
+  - .
+
+# Skip specific paths
+skip-path:
+  - ".terraform/*"
+
+skip-check:
+  - CKV2_AWS_5  # Not required for this OpenTofu module
+  - CKV2_AWS_11 # Not required for this OpenTofu module.  
+
+# General settings
+compact: true
+framework:
+  - terraform
+  - terraform_plan
+  - cloudformation
+
+quiet: true
+summary-position: bottom
+
+download-external-modules: false

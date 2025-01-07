@@ -33,6 +33,11 @@ Resources:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: "AES256"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
       LifecycleConfiguration:
         Rules:
           - Id: "ExpireOldVersions"
@@ -41,8 +46,41 @@ Resources:
           - Id: "DeleteOldObjects"
             Status: "Enabled"
             ExpirationInDays: 365
+      LoggingConfiguration:
+        DestinationBucketName: !Ref S3LogBucket
+        LogFilePrefix: "tfstate-access-logs/"
+
+  # S3 Bucket for storing access logs
+  S3LogBucket:
+    Metadata:
+      checkov:
+        skip:
+          - id: "CKV_AWS_18"
+            comment: "S3 Access logging not set up for OpenTofu state bucket to avoid recursive logging. Use CloudTrail instead."
+          - id: "CKV_AWS_21"
+            comment: "S3 bucket versioning is not required for the access log bucket."
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Sub "${Org}-s3-${AppId}-${Environment}-logs"
+      LifecycleConfiguration:
+        Rules:
+          - Id: "ExpireOldLogs"
+            Status: "Enabled"
+            ExpirationInDays: 30
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
 
   DynamoDBTable:
+    Metadata:
+      checkov:
+        skip:
+          - id: "CKV_AWS_28"
+            comment: "DynamoDB PITR is not required for OpenTofu state locking"
+          - id: "CKV_AWS_119"
+            comment: "DynamoDB Table encryption using KMS CMK is not required for OpenTofu state locking"
     Type: "AWS::DynamoDB::Table"
     Properties:
       TableName: !Sub "${Org}-ddbtable-${AppId}-${Environment}-tfstate"

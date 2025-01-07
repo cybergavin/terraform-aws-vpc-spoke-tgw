@@ -153,6 +153,11 @@ resource "aws_route_table_association" "this" {
   route_table_id = aws_route_table.this.id
 }
 
+# Ensure default security group is managed by this module and has no rules
+resource "aws_default_security_group" "this" {
+  vpc_id = aws_vpc.this[module.networking_vpc_label.id].id
+}
+
 # Create security group(s)
 resource "aws_security_group" "this" {
   for_each = { for sg in var.security_groups : module.networking_sg_label["${var.app_id}-${sg.alias}"].id => sg }

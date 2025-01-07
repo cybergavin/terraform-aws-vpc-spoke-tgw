@@ -1,6 +1,5 @@
 module "networking_base_label" {
-  source  = "cloudposse/label/null"
-  version = "0.25.0"
+  source = "git::https://github.com/cloudposse/terraform-null-label.git?ref=488ab91e34a24a86957e397d9f7262ec5925586a" # commit hash for v0.25.0
 
   tenant      = var.org
   name        = "aws" # to be overwritten by actual AWS resource type (e.g., vpc for AWS VPC)
@@ -11,32 +10,28 @@ module "networking_base_label" {
 }
 
 module "networking_vpc_label" {
-  source  = "cloudposse/label/null"
-  version = "0.25.0"
+  source = "git::https://github.com/cloudposse/terraform-null-label.git?ref=488ab91e34a24a86957e397d9f7262ec5925586a" # commit hash for v0.25.0
 
   name    = "vpc"
   context = module.networking_base_label.context
 }
 
 module "networking_rtb_label" {
-  source  = "cloudposse/label/null"
-  version = "0.25.0"
+  source = "git::https://github.com/cloudposse/terraform-null-label.git?ref=488ab91e34a24a86957e397d9f7262ec5925586a" # commit hash for v0.25.0
 
   name    = "rtb"
   context = module.networking_base_label.context
 }
 
 module "networking_dop_label" {
-  source  = "cloudposse/label/null"
-  version = "0.25.0"
+  source = "git::https://github.com/cloudposse/terraform-null-label.git?ref=488ab91e34a24a86957e397d9f7262ec5925586a" # commit hash for v0.25.0
 
   name    = "dop"
   context = module.networking_base_label.context
 }
 
 module "networking_subnet_label" {
-  source  = "cloudposse/label/null"
-  version = "0.25.0"
+  source = "git::https://github.com/cloudposse/terraform-null-label.git?ref=488ab91e34a24a86957e397d9f7262ec5925586a" # commit hash for v0.25.0
 
   for_each    = { for subnet in local.subnet_configs : "${var.app_id}-${subnet.key}-${subnet.az}" => subnet }
   tenant      = var.org
@@ -48,8 +43,7 @@ module "networking_subnet_label" {
 }
 
 module "networking_sg_label" {
-  source  = "cloudposse/label/null"
-  version = "0.25.0"
+  source = "git::https://github.com/cloudposse/terraform-null-label.git?ref=488ab91e34a24a86957e397d9f7262ec5925586a" # commit hash for v0.25.0
 
   for_each    = { for sg in var.security_groups : "${var.app_id}-${sg.alias}" => sg }
   tenant      = var.org
@@ -61,8 +55,7 @@ module "networking_sg_label" {
 }
 
 module "networking_tgw_attachment_label" {
-  source  = "cloudposse/label/null"
-  version = "0.25.0"
+  source = "git::https://github.com/cloudposse/terraform-null-label.git?ref=488ab91e34a24a86957e397d9f7262ec5925586a" # commit hash for v0.25.0
 
   name        = "tgw-attach-IT-SEC-PROD-01"
   label_order = ["tenant", "name"]
