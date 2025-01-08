@@ -200,12 +200,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tfplan
-          path: tfplan.binary
+          path: ./tfplan.binary
 
       - name: Checkov Scan
         uses: bridgecrewio/checkov-action@v12
         with:
-          file: tfplan.binary
+          file: ./tfplan.binary
           repo_root_for_plan_enrichment: examples/sales-spoke-vpc
           download_external_modules: true
           config_file: .checkov.yml
@@ -249,10 +249,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tfplan
-          path: tfplan.binary
+          path: ./tfplan.binary
 
       - name: Tofu Apply
-        run: tofu apply tfplan.binary
+        run: tofu apply ./tfplan.binary
 
   test-tofu-destroy:
     # Job to destroy the OpenTofu plan for the sbx environment after manual approval
