@@ -251,6 +251,14 @@ jobs:
           name: tfplan
           path: ./tfplan.binary
 
+      - name: Verify Plan File
+        run: |
+          if [ ! -f ./tfplan.binary ]; then
+            echo "Plan file not found!"
+          fi
+          tree .
+          ls -alrt
+          
       - name: Tofu Apply
         run: tofu apply ./tfplan.binary
 
