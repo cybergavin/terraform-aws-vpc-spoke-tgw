@@ -25,6 +25,8 @@ On the machine where you will execute the OpenTofu commands, do the following:
     ```
     ./bootstrap.sh <ENVIRONMENT>
     ```
+    where `<ENVIRONMENT>` is the name of the environment you are bootstrapping (the directory within `environments` directory containing the `terraform.tfvars` file).
+
   - Clone the `terraform-aws-vpc-spoke-tgw` repository.
   ```
   git clone https://github.com/cybergavin/terraform-aws-vpc-spoke-tgw.git

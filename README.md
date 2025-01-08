@@ -31,8 +31,7 @@ Refer to the [sales-spoke-vpc](https://github.com/cybergavin/terraform-aws-vpc-s
 
 ```hcl
 module "sales-spoke-vpc" {
-  source  = "cybergavin/vpc-spoke-tgw/aws"
-  version = "1.0.2"
+  source = "git::https://github.com/cybergavin/terraform-aws-vpc-spoke-tgw.git?ref=<COMMIT_HASH>" # commit hash for required version
   # insert the required variables here
 }
 ```
