@@ -252,7 +252,7 @@ jobs:
           path: tfplan.binary
 
       - name: Tofu Apply
-        run: tofu apply tfplan.binary -auto-approve
+        run: tofu apply tfplan.binary
 
   test-tofu-destroy:
     # Job to destroy the OpenTofu plan for the sbx environment after manual approval
@@ -286,7 +286,7 @@ jobs:
       
   pre-release-tag:
     # Job to create a pre-release tag for the repository, prior to creating a pull request
-    needs: [find-changes, test-tofu-destroy]
+    needs: [format-check, lint-check, test-tofu-destroy]
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -294,8 +294,7 @@ jobs:
       contents: write
     if: |
       always() &&
-      needs.find-changes.result == 'success' &&
-      (needs.test-tofu-destroy.result == 'success' || needs.test-tofu-destroy.result == 'skipped')
+      (needs.format-check.result == 'skipped' || needs.lint-check.result == 'skipped' || needs.test-tofu-destroy.result == 'success')
 
     steps:
       - name: Checkout repository
