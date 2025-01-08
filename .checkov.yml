@@ -21,4 +21,4 @@ framework:
 quiet: true
 summary-position: bottom
 
-download-external-modules: false
+download-external-modules: true

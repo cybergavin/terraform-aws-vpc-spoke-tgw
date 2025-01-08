@@ -1,6 +1,6 @@
 # Sales Account Networking
 module "sales-network" {
-  source                     = "../../../"
+  source                     = "../../../terraform-aws-vpc-spoke-tgw"
   org                        = var.org
   app_id                     = var.app_id
   environment                = var.environment
