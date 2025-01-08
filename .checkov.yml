@@ -11,7 +11,9 @@ skip-check:
 
 # General settings
 compact: true
+enable-secret-scan-all-files: true
 framework:
+  - secrets
   - terraform
   - terraform_plan
   - cloudformation
