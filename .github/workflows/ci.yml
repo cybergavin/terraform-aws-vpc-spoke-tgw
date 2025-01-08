@@ -1,14 +1,17 @@
 name: OpenTofu Module CI Pipeline
 
+# Trigger the workflow on push to any branch except main (GitHub flow)
 on:
   push:
     branches-ignore:
       - main
 
+# Environment variables for the workflow
 env:
   OPENTOFU_VERSION: "1.8.8"
-
+  
 jobs:
+  # Find changes in the repository
   find-changes:
     runs-on: ubuntu-latest
     steps:
@@ -18,7 +21,6 @@ jobs:
         with:
           fetch-depth: 0
       
-      # Determine files that have been added and/or modified in push event
       - name: Fetch the default branch
         run: git fetch origin main  # Get source of truth
     
@@ -31,7 +33,6 @@ jobs:
           echo "Added or modified files:"
           cat changed_files.txt
 
-      # Determine file types that have been added and/or modified in push event
       - name: Determine file types and set outputs
         id: file-types
         run: |
@@ -51,6 +52,7 @@ jobs:
         changed_tf_files: ${{ steps.file-types.outputs.changed_tf_files }}
 
   format-check:
+    # Job to check the changed Terraform/OpenTofu files for formatting errors
     runs-on: ubuntu-latest
     needs: find-changes
     if: needs.find-changes.outputs.run_job == 'true'
@@ -79,6 +81,7 @@ jobs:
           fi
 
   lint-check:
+    # Job to check the changed Terraform/OpenTofu files for linting errors
     runs-on: ubuntu-latest
     needs: find-changes
     if: needs.find-changes.outputs.run_job == 'true'
@@ -93,18 +96,20 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.tflint.d/plugins
-          key: tflint-${{ hashFiles('.tflint.hcl') }}
+          key: tflint-${{ hashFiles('**/*.tf') }}
+          restore-keys: |
+            tflint-
 
       - name: Setup TFLint
         uses: terraform-linters/setup-tflint@v4
         with:
           tflint_version: v0.54.0
 
+      - name: Init TFLint
+        run: tflint --init          
+
       - name: Show version
         run: tflint --version
-
-      - name: Init TFLint
-        run: tflint --init
 
       - name: Run TFLint on changed Terraform/OpenTofu files in modules
         run: |
@@ -122,6 +127,7 @@ jobs:
           fi
   
   bootstrap-test-tofu:
+    # Job to bootstrap the sbx environment by creating the resources for a remote backend for OpenTofu state
     runs-on: ubuntu-latest
     needs: [format-check, lint-check]
     environment: sbx
@@ -144,6 +150,7 @@ jobs:
           ./bootstrap.sh ${{ vars.ENVIRONMENT }}
 
   test-tofu-plan:
+    # Job to generate an OpenTofu plan for the sbx environment
     needs: [bootstrap-test-tofu]
     runs-on: ubuntu-latest
     environment: sbx
@@ -170,11 +177,51 @@ jobs:
 
       - name: Tofu Plan
         working-directory: examples/sales-spoke-vpc
-        run: tofu plan --var-file="environments/${{ vars.ENVIRONMENT }}/terraform.tfvars"
-
-  
-  test-tofu-apply:
+        run: tofu plan --var-file="environments/${{ vars.ENVIRONMENT }}/terraform.tfvars" --out=tfplan.binary
+          
+      - name: Upload Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: examples/sales-spoke-vpc/tfplan.binary
+      
+  test-scan-plan:
+    # Job to scan the OpenTofu plan for security vulnerabilities
     needs: [test-tofu-plan]
+    runs-on: ubuntu-latest
+    environment: sbx  
+    permissions:
+      security-events: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: tfplan.binary
+
+      - name: Checkov Scan
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          file: tfplan.binary
+          repo_root_for_plan_enrichment: examples/sales-spoke-vpc
+          download_external_modules: true
+          config_file: .checkov.yml
+          output_format: cli,sarif
+          output_file_path: console,results.sarif
+          soft_fail: true
+          
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v3  
+        with:
+          sarif_file: results.sarif
+          category: checkov
+
+  test-tofu-apply:
+    # Job to apply the OpenTofu plan for the sbx environment after manual approval
+    needs: [test-scan-plan]
     runs-on: ubuntu-latest
     environment: sbx-approval
     steps:
@@ -198,11 +245,17 @@ jobs:
         working-directory: examples/sales-spoke-vpc
         run: tofu init --var-file="environments/${{ vars.ENVIRONMENT }}/terraform.tfvars"
 
+      - name: Download Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: tfplan.binary
+
       - name: Tofu Apply
-        working-directory: examples/sales-spoke-vpc
-        run: tofu apply --var-file="environments/${{ vars.ENVIRONMENT }}/terraform.tfvars" -auto-approve
+        run: tofu apply tfplan.binary -auto-approve
 
   test-tofu-destroy:
+    # Job to destroy the OpenTofu plan for the sbx environment after manual approval
     needs: [test-tofu-apply]
     runs-on: ubuntu-latest
     environment: sbx-approval
@@ -232,6 +285,7 @@ jobs:
         run: tofu destroy --var-file="environments/${{ vars.ENVIRONMENT }}/terraform.tfvars" -auto-approve
       
   pre-release-tag:
+    # Job to create a pre-release tag for the repository, prior to creating a pull request
     needs: [find-changes, test-tofu-destroy]
     runs-on: ubuntu-latest
     env:
@@ -282,6 +336,7 @@ jobs:
           git push origin $new_version
 
   check-existing-pr:
+    # Job to check if a pull request already exists for the branch
     needs: pre-release-tag
     runs-on: ubuntu-latest
     env:
@@ -310,6 +365,7 @@ jobs:
         pr_exists: ${{ env.pr_exists }}
 
   create-pull-request:
+
     runs-on: ubuntu-latest
     needs: check-existing-pr
     permissions:
