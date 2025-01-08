@@ -248,16 +248,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tfplan
-
-      - name: Verify Plan File
-        run: |
-          if [ ! -f ./tfplan.binary ]; then
-            echo "Plan file not found!"
-          fi
-          tree .
-          ls -alrt
+          path: examples/sales-spoke-vpc
 
       - name: Tofu Apply
+        working-directory: examples/sales-spoke-vpc
         run: tofu apply tfplan.binary
 
   test-tofu-destroy:
